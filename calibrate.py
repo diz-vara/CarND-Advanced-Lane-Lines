@@ -13,7 +13,7 @@ import matplotlib.image as mpimg
 import os
 
 #real-world coordinates of the calibration pattern
-def calcCorners(nx,ny):
+def calcCorners(nx,ny, sqSide = 40):
     objCorners = []
     for row in range(ny):
         for col in range (nx):
@@ -24,15 +24,15 @@ def calcCorners(nx,ny):
 
 
 def calibrate(cal_dir = './camera_cal', nx=9, ny=6):
-    sqSide = 400 # 40 mm is a 'normal' size of the printed pattern
+    
     #we can skip it here, but for real calibration FAST_CHECK is important!!
     flagCorners = cv2.CALIB_CB_FAST_CHECK | cv2.CALIB_CB_ADAPTIVE_THRESH 
     flagCorners = flagCorners | cv2.CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_FILTER_QUADS
     #enable additional coefficients
     flagCalib = 0
     flagCalib = flagCalib | cv2.CALIB_RATIONAL_MODEL
-    #flagCalib = flagCalib | cv2.CALIB_THIN_PRISM_MODEL
-    #flagCalib = flagCalib | cv2.CALIB_TILTED_MODEL
+    flagCalib = flagCalib | cv2.CALIB_THIN_PRISM_MODEL
+    flagCalib = flagCalib | cv2.CALIB_TILTED_MODEL
     
     
             
