@@ -32,7 +32,7 @@ def calibrate(cal_dir = './camera_cal', nx=9, ny=6):
     flagCalib = 0
     flagCalib = flagCalib | cv2.CALIB_RATIONAL_MODEL
     flagCalib = flagCalib | cv2.CALIB_THIN_PRISM_MODEL
-    flagCalib = flagCalib | cv2.CALIB_TILTED_MODEL
+    #flagCalib = flagCalib | cv2.CALIB_TILTED_MODEL
     
     
             

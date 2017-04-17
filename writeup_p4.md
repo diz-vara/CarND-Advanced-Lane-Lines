@@ -25,6 +25,7 @@ The goals / steps of this project are the following:
 [calibr5]: ./camera_cal/calibration5.jpg "calibr5m"
 
 [undist1]: ./output_images/cal_undistorted_1.png "undistorted"
+[undist2]: ./output_images/cal_undistorted_2.png "undistorted"
 [undist3]: ./output_images/cal_undistorted_3.png "undistorted"
 
 [imagea]: ./test_images/test1.jpg "Road Transformed"
@@ -65,8 +66,15 @@ After the first run, it became obvious, that:
 - after uhdistortion, left vertical line in the undistorted image was not straight - it was curved 'outside'
 (in the direction opposite to that in original image):
 
-![alt text][distorted]  
-![alt text][undist0]
+Original (distorted) image				
+
+<img src="./output_images/cal_distorted.png" width="500">
+
+
+Undistorted image
+
+<img src="./output_images/cal_undistorted_0.png" width="500">
+ 
 
 
 Then I attempted to use different pattern size in cases where `cv2.findChessboardCorners` failed (file `calibration.py`, lines 51-60. For that purpose, I refactored the creation of pattern's object coordinates into
@@ -78,9 +86,11 @@ are to be visible in every shot. But here I can't make new shots. And I need the
 As the source of the error was the irreqularity of detected patterns (different number of corners in different
 rows or columns, I edited these images, wiping-out portions of them. Here are two modified images:
 
-![alt text][calibr4] 
+**Modified calibration4.jpg ( pattern 8x6) and calibration5.jpg ( pattern 9x5)**
 
-![alt text][calibr5]
+<img src="./camera_cal/calibration4.jpg" width="400">
+<img src="./camera_cal/calibration5.jpg" width="400">
+
 
 After this modification all 20 calibration images were processed, but undistorted images remained curved.
 
@@ -92,11 +102,28 @@ I think, we need more data to calculate these coefficients.
 Unfortunately , in curent version of OpenCV thing prism model without tilted model does not work.
 So, I decided to use rational model (8 distortion coefficients, second image).
 
-![alt text][undist0]
-![alt text][undist1]
-![alt text][undist3]
+flags = 0; 5 coefficients
+
+<img src="./output_images/cal_undistorted_0.png" width="500">
 
 
+
+flags = CALIB\_RATIONAL_MODEL; 8 coefficietns
+
+<img src="./output_images/cal_undistorted_1.png" width="500">
+
+
+flags = CALIB\_RATIONAL\_MODEL | CALIB\_THIN\_PRISM\_MODEL; 12 coefficietns
+
+<img src="./output_images/cal_undistorted_2.png" width="500">
+
+
+
+flags = CALIB\_RATIONAL\_MODEL | CALIB\_THIN\_PRISM\_MODEL | CALIB\_TILTED\_MODEL; 14 coefficietns
+
+<img src="./output_images/cal_undistorted_3.png" width="500">
+
+*(To use THIN\_PRISM\_MODEL, you need to update OpenCV to version 3.2)*
 
 
 ###Pipeline (single images)
