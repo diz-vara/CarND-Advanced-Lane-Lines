@@ -39,7 +39,7 @@ def calibrate(cal_dir = './camera_cal', nx=9, ny=6):
     imgPoints = []
     objPoints = []        
     #read images and try to find corneres in each of them        
-    for entry in os.scandir('./camera_cal'):
+    for entry in os.scandir(cal_dir):
         if entry.is_file():
             img = cv2.imread(entry.path)
             img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
