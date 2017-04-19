@@ -9,7 +9,7 @@ out_dir = './output_images/'
 #%%
 runfile('calibrate.py')
 ret, mtx, dist = calibrate(cal_dir,9,6)
-
+pickle.dump({"mtx":mtx, "dist":dist}, open("mtx_dist.p", "wb"))
 
 #%%
 #read distorted image, display original and undistorted

@@ -31,7 +31,7 @@ def calibrate(cal_dir = './camera_cal', nx=9, ny=6):
     #enable additional coefficients
     flagCalib = 0
     flagCalib = flagCalib | cv2.CALIB_RATIONAL_MODEL
-    flagCalib = flagCalib | cv2.CALIB_THIN_PRISM_MODEL
+    #flagCalib = flagCalib | cv2.CALIB_THIN_PRISM_MODEL
     #flagCalib = flagCalib | cv2.CALIB_TILTED_MODEL
     
     
@@ -70,8 +70,10 @@ def calibrate(cal_dir = './camera_cal', nx=9, ny=6):
     #imgPoints = np.array(imgPoints)            
     #all corners found - build calibration matrix and 
     #calculate distortion coeffs
-    dcf = np.zeros((1,12), np.float64)
+    dcf = np.zeros((1,8), np.float64)
     mtx = np.zeros((3,3), np.float64)
-    ret, mtx, dist, rv, tv = cv2.calibrateCamera(objPoints, imgPoints, shape, mtx, distCoeffs=dcf, flags = flagCalib)
+    ret, mtx, dist, rv, tv = cv2.calibrateCamera(objPoints, imgPoints, shape, 
+                                                 mtx, distCoeffs=dcf, 
+                                                 flags = flagCalib)
     return ret, mtx, dist
     
