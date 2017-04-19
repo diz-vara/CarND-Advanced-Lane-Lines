@@ -14,7 +14,7 @@ import matplotlib.image as mpimg
 image = mpimg.imread('./test_images/test1.jpg')
 
 # Edit this function to create your own pipeline.
-def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
+def pipeline(img, s_thresh=(170, 255), sx_thresh=(60, 255)):
     img = np.copy(img)
     # Convert to HSV color space and separate the V channel
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HLS).astype(np.float)
@@ -35,15 +35,17 @@ def pipeline(img, s_thresh=(170, 255), sx_thresh=(20, 100)):
     s_binary[(s_channel >= s_thresh[0]) & (s_channel <= s_thresh[1])] = 1
     # Stack each channel
     
-    d_binary = mag_thresh(l_channel,mag_thresh=(30,900));
+    m_binary = mag_thresh(l_channel,mag_thresh=(100,256), sobel_kernel=11);
+    d_binary = dir_thresh(l_channel, sobel_kernel = 15, thresh=(0.8,1.3));
     # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might
     # be beneficial to replace this channel with something else.
-    color_binary = np.dstack(( d_binary*0.1, sxbinary*0.5, s_binary))
+    color_binary = np.dstack(( ( (m_binary == 1) & (d_binary == 1))*0.9, sxbinary*0.5, s_binary*0.5))
     return color_binary
     
 #%%    
-img = images[4]
-result = pipeline(img)
+img = images[1]
+dst = cv2.undistort(img, mtx, dist, None, mtx)
+result = pipeline(dst)
 
 # Plot the result
 f, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12))
@@ -52,6 +54,6 @@ f.tight_layout()
 ax1.imshow(img)
 ax1.set_title('Original Image', fontsize=20)
 
-ax2.imshow(result)
+ax2.imshow(img/2+(result*255).astype(np.uint8))
 ax2.set_title('Pipeline Result', fontsize=20)
 plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
