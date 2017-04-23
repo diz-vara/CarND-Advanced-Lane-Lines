@@ -39,11 +39,11 @@ def pipeline(img, s_thresh=(170, 255), sx_thresh=(60, 255)):
     d_binary = dir_thresh(l_channel, sobel_kernel = 15, thresh=(0.8,1.3));
     # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might
     # be beneficial to replace this channel with something else.
-    color_binary = np.dstack(( ( (m_binary == 1) & (d_binary == 1))*0.9, sxbinary*0.5, s_binary*0.5))
+    color_binary = np.dstack(( ( (m_binary == 1) & (d_binary == 1))*0.5, sxbinary*0.5, s_binary*0.5))
     return color_binary
     
 #%%    
-img = images[1]
+img = images[3]
 dst = cv2.undistort(img, mtx, dist, None, mtx)
 result = pipeline(dst)
 
@@ -54,6 +54,6 @@ f.tight_layout()
 ax1.imshow(img)
 ax1.set_title('Original Image', fontsize=20)
 
-ax2.imshow(img/2+(result*255).astype(np.uint8))
+ax2.imshow(img//2+(result*255).astype(np.uint8))
 ax2.set_title('Pipeline Result', fontsize=20)
 plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)

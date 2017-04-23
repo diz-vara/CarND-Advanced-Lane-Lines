@@ -124,22 +124,46 @@ Here is original and 'rational model' superposition.
 <img src="./output_images/dst_und1_stack.png" width="500">
 
 You can see that all differenes are near image borders, at the center both images 
-coinside.
+coinside. And this is a normal situation for almost any lens. I have only one lens
+in my collection, which may give signigicant distortions at the center of
+the frame - at that one is the 'artistic' LensBaby 2.0.
 
-
+<img src="./output_images/lensbaby.jpg" width="300">
 
 ### Pipeline (single images)
 
-#### 1. Provide an example of a distortion-corrected image.
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
+Examples above show that lens distortion is minimal at the center of the images,
+where we expect lines to appear. So, I'll not publish 'undistorted lanes' here - 
+you'll see effect of undistortion few linew below.
 
-#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
 
-![alt text][image3]
 
-####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
+#### 2. Colors, gradients, thresholds.
+
+
+
+For thresholding, I used a cobination of:
+- color threshold in S-channels of the HLS color space
+- sobel magntiude threshold
+- sobelX treshold
+
+The code for thresholding (adoprted from the lesson with
+minor modifications) you can find in the file `stack.py` 
+
+In this image you see 'test2' image with overlayed binary images: 
+- blue for S-channel thrshold
+- green for sobel magnitude
+- red for sobelX
+
+<img src="./output_images/test2+thr.png" width="800">
+
+Here you can clearly see, pronounced undistortion effect on the sign - but
+not on the lanes.
+
+
+
+
+#### 3. Perspective transform.
 
 The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
 
