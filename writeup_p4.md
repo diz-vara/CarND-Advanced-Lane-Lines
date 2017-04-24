@@ -151,7 +151,7 @@ The code for thresholding (adoprted from the lesson with
 minor modifications) you can find in the file `stack.py` 
 
 In this image you see 'test2' image with overlayed binary images: 
-- blue for S-channel thrshold
+- blue for S-channel threshold
 - green for sobel magnitude
 - red for sobelX
 
@@ -160,40 +160,55 @@ In this image you see 'test2' image with overlayed binary images:
 Here you can clearly see, pronounced undistortion effect on the sign - but
 not on the lanes.
 
+In my 'real life' (outside of carND), I've spent a lot of time analysing different
+line-extraction approaches, and I can definitely say, and I can definitely say, that this
+one is not the best. But it works :)
 
 
 
 #### 3. Perspective transform.
 
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+To calculate perspective transform, I used provided file `straight_lines1.jpg'.
+The image was undistorted using intrinsic camera parameters calculated in the
+fiers step. Then I found line coordinates with the help of detectLanes() function
+developed in [P1](https://github.com/diz-vara/CarND-P1/blob/master/P1.ipynb).
+
+<img src="./output_images/straight0+lines.png" width="600">
+
+Two original lines coordinates were calculated by `detectLanes()`:
+```
+src = np.float32(
+   [[ lines[0][0], lines[0][1]],
+    [ lines[0][2], lines[0][3]], 
+    [ lines[1][0], lines[1][1]],
+    [ lines[1][2], lines[1][3]], 
+```
+which approximately gives:
 
 ```
 src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-
+   [[ 268, 676],
+    [ 580, 460], 
+    [1046, 676], 
+    [697,  460]])
+``` 
+ To calculate transformation that will make these lines vertical 
+ (and full-height), destination points have same x-coordinates,
+ and y-coodrdinates corresponding to the size of the image: 
 ```
-This resulted in the following source and destination points:
+dst = np.float32(
+   [[ lines[0][0], height],
+    [ lines[0][0], 0], 
+    [ lines[1][0], height], 
+    [ lines[1][0],  0]])
+ ```
+where height = image.shape[0]
 
-| Source        | Destination   | 
-|:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+Result of coordinate transformation is shown below: 
+ 
+<img src="./output_images/warped.png" width="600">
 
-I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
-
-![alt text][image4]
-
-####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+#### 4. Lane-line pixels and polynomial fit
 
 Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
 
