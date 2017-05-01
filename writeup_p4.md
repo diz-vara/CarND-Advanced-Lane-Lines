@@ -38,7 +38,7 @@ The goals / steps of this project are the following:
 
 ### Camera Calibration
 
-####1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
+
 
 The code for this step is contained in lines # through # of the file called `calibrate.py`).  
 
@@ -210,15 +210,23 @@ Result of coordinate transformation is shown below:
 
 #### 4. Lane-line pixels and polynomial fit
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+At this point, it became possible to apply thresholding, undistortion and perspective
+transformation - and obtain bird-eye view of the curved lines:
 
-![alt text][image5]
+I also removed noise (small particles) by simple 'open' operation
+(`cv2.MORPH_OPEN`)
 
-####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+<img src="./output_images/lines_warped.png" width="400">
+
+
+
+
+
+#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
 I did this in lines # through # in my code in `my_other_file.py`
 
-####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
 I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
 

@@ -32,14 +32,16 @@ src = np.float32(
 
 dst = np.float32(
    [[ lines[0][0], height],
-    [ lines[0][0], 0], 
+    [ lines[0][0], height*0.25], 
     [ lines[1][0], height], 
-    [ lines[1][0],  0]])
+    [ lines[1][0], height*0.25]])
 
 M = cv2.getPerspectiveTransform(src, dst)
+Minv = cv2.getPerspectiveTransform(dst, src)
+
             # e) use cv2.warpPerspective() to warp your image to a top-down view
 warped = cv2.warpPerspective(image, M, (image.shape[1], image.shape[0]), 
                              flags=cv2.INTER_LINEAR)
 cv2.imwrite("warped.png",warped)
 
-pickle.dump(M, open("M.p", "wb"))
+pickle.dump((M, Minv), open("M.p", "wb"))

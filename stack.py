@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 
-image = mpimg.imread('./test_images/test1.jpg')
 
 # Edit this function to create your own pipeline.
 def pipeline(img, s_thresh=(170, 255), sx_thresh=(60, 255)):
@@ -39,8 +38,9 @@ def pipeline(img, s_thresh=(170, 255), sx_thresh=(60, 255)):
     d_binary = dir_thresh(l_channel, sobel_kernel = 15, thresh=(0.8,1.3));
     # Note color_binary[:, :, 0] is all 0s, effectively an all black image. It might
     # be beneficial to replace this channel with something else.
-    color_binary = np.dstack(( ( (m_binary == 1) & (d_binary == 1))*0.5, sxbinary*0.5, s_binary*0.5))
-    return color_binary
+    #color_binary = np.dstack(( ( (m_binary == 1) & (d_binary == 1))*0.5, sxbinary*0.5, s_binary*0.5))
+    result = ( ((m_binary == 1) & (d_binary == 1)) | (sxbinary == 1) | (s_binary==1))
+    return result
     
 #%%    
 img = images[3]
@@ -57,3 +57,6 @@ ax1.set_title('Original Image', fontsize=20)
 ax2.imshow(img//2+(result*255).astype(np.uint8))
 ax2.set_title('Pipeline Result', fontsize=20)
 plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
+
+r = (result*255).astype(np.uint8)
+rr = r[:,:,1] | r[:,:,0] | r[:,:,2]

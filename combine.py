@@ -68,7 +68,7 @@ def mag_thresh(img, sobel_kernel=3, mag_thresh=(0, 255)):
     # 6) Return this mask as your binary_output image
     return sbinary
     
-def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
+def dir_thresh(img, sobel_kernel=3, thresh=(0, np.pi/2)):
     # 1) Convert to grayscale
     if (len(img.shape) == 3 and img.shape[2] == 3):
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
