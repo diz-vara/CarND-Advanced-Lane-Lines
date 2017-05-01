@@ -21,7 +21,7 @@ xm_per_pix = 3.7/newW # meters per pixel in x dimension
 
 def cluster_fit(imageIn):
 
-    s=cv2.resize(rwbc,(newW,newH))
+    s=cv2.resize(imageIn,(newW,newH))
     points = cv2.findNonZero(s)
     p = points[:,0,:]
     model.fit(p)

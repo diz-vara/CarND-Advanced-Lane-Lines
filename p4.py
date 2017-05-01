@@ -55,45 +55,52 @@ for entry in os.scandir(test_dir):
         images.append(img)
 
 #%%
-img = images[8]
 
-oldH = img.shape[0]
-oldW = img.shape[1]
+def process_image(image):
+    oldH = image.shape[0]
+    oldW = image.shape[1]
+    
+    dst = cv2.undistort(image, mtx, dist, None, mtx)
+    dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
+                                 flags=cv2.INTER_LINEAR)
+    rr = pipeline(dw)
+    #combine
+    r = (rr*255).astype(np.uint8)
+    
+    #unnwrap
+    #rw = cv2.warpPerspective(r, M, (r.shape[1], r.shape[0]), 
+    #                             flags=cv2.INTER_LINEAR)
+    
+    rwb = np.zeros_like(r)
+    rwb[r > 2] = 255
+    
+    #remove noise
+    rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
+    
+    res, left, right = cluster_fit(rwbc)
+    
+    cw = cv2.resize(res, (oldW,oldH))
+    newwarp = cv2.warpPerspective(cw, Minv, (oldW, oldH))
+    
+    result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)
+    return result
+    
 
-dst = cv2.undistort(img, mtx, dist, None, mtx)
-result = pipeline(dst)
-#combine
-r = (result*255).astype(np.uint8)
+#%%
+img = images[7]
+plt.imshow(process_image(images[9]))
 
-#unnwrap
-rw = cv2.warpPerspective(r, M, (r.shape[1], r.shape[0]), 
-                             flags=cv2.INTER_LINEAR)
 
-rwb = np.zeros_like(rw)
-rwb[rw > 2] = 255
-
-#remove noise
-rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
-
-res, left, right = cluster_fit(rwbc)
-
-cw = cv2.resize(res, (oldW,oldH))
-newwarp = cv2.warpPerspective(cw, Minv, (oldW, oldH))
-
-result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)
-plt.imshow(result)
 
 #%%
 
+from moviepy.editor import VideoFileClip
+#from IPython.display import HTML
 
-
-#%%
-drawingMode=BOTH
-center = Point(0.5, 0.6)
-yellow_output = 'out/yellow.mp4'
+video_output = 'out/first.mp4'
 clip2 = VideoFileClip('project_video.mp4')
-yellow_clip = clip2.fl_image(process_image)
-get_ipython().magic('time yellow_clip.write_videofile(yellow_output, audio=False)')
+first_clip = clip2.fl_image(process_image)
+get_ipython().magic('time first_clip.write_videofile(video_output, audio=False)')
 
 
 
