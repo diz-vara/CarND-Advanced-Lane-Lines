@@ -55,6 +55,16 @@ for entry in os.scandir(test_dir):
         images.append(img)
 
 #%%
+def rescale2width(img, newWidth):
+    scale = newWidth/img.shape[1]
+    out = cv2.resize(img, (0,0), fx=scale, fy=scale)
+    return out,scale
+    
+
+    
+
+     
+#%%
 
 def process_image(image):
     oldH = image.shape[0]
@@ -63,31 +73,29 @@ def process_image(image):
     dst = cv2.undistort(image, mtx, dist, None, mtx)
     dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
                                  flags=cv2.INTER_LINEAR)
+    
     rr = pipeline(dw)
     #combine
     r = (rr*255).astype(np.uint8)
     
-    #unnwrap
-    #rw = cv2.warpPerspective(r, M, (r.shape[1], r.shape[0]), 
-    #                             flags=cv2.INTER_LINEAR)
-    
+   
     rwb = np.zeros_like(r)
     rwb[r > 2] = 255
     
     #remove noise
     rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
     
-    res, left, right = cluster_fit(rwbc)
+   
+    res, r_left, r_right = find_and_fit(rwbc)
     
-    cw = cv2.resize(res, (oldW,oldH))
-    newwarp = cv2.warpPerspective(cw, Minv, (oldW, oldH))
+    newwarp = cv2.warpPerspective(res, Minv, (oldW, oldH))
     
     result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)
     return result
     
 
 #%%
-img = images[7]
+
 plt.imshow(process_image(images[9]))
 
 
