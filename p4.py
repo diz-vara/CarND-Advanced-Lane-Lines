@@ -86,8 +86,9 @@ def process_image(image):
     rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
     
    
-    res, r_left, r_right = find_and_fit(rwbc)
+    #res, r_left, r_right = find_and_fit(rwbc)
     
+    res, searchImg = window_fit(rwbc)
     newwarp = cv2.warpPerspective(res, Minv, (oldW, oldH))
     
     result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)

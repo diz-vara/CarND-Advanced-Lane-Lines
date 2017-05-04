@@ -47,8 +47,8 @@ def window_fit(imageIn):
     rightIdx = []
 
     for win in range(nWindows):
-        y0 = imgW - (win+1) * windowH
-        y1 = imgW - win * windowH
+        y0 = imgH - (win+1) * windowH
+        y1 = imgH - win * windowH
         left_x0 = left - search_range
         left_x1 = left + search_range
         
@@ -58,6 +58,7 @@ def window_fit(imageIn):
         cv2.rectangle(out_img,(left_x0,y0),(left_x1,y1),(0,255,0), 2) 
         cv2.rectangle(out_img,(right_x0,y0),(right_x1,y1),(0,255,0), 2) 
     
+        
         good_left_inds = ((nzy >= y0) & (nzy < y1) & (nzx >= left_x0) & (nzx < left_x1)).nonzero()[0]
         good_right_inds = ((nzy >= y0) & (nzy < y1) & (nzx >= right_x0) & (nzx < right_x1)).nonzero()[0]
         # Append these indices to the lists
@@ -85,11 +86,12 @@ def window_fit(imageIn):
     left_fit = np.polyfit(lefty, leftx, 2)
     right_fit = np.polyfit(righty, rightx, 2)
 
+    ploty = np.arange(imgH)
     
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
-    warp_zero = np.zeros_like(s).astype(np.uint8)
+    warp_zero = np.zeros_like(imageIn).astype(np.uint8)
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
     
     pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))]).astype(np.int)
