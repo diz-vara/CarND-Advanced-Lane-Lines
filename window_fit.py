@@ -33,18 +33,14 @@ def window_fit(imageIn):
     windowH = imgH//nWindows
     
     
-    nz = imageIn.nonzero();
-    nzy = nz[0]
-    nzx = nz[1]
-    
     left = left0
     right = right0
     
     search_range = 100
     minpix = 10
     
-    leftIdx = []
-    rightIdx = []
+    leftPts = []
+    rightPts = []
 
     for win in range(nWindows):
         y0 = imgH - (win+1) * windowH
@@ -58,33 +54,37 @@ def window_fit(imageIn):
         cv2.rectangle(out_img,(left_x0,y0),(left_x1,y1),(0,255,0), 2) 
         cv2.rectangle(out_img,(right_x0,y0),(right_x1,y1),(0,255,0), 2) 
     
-        
-        good_left_inds = ((nzy >= y0) & (nzy < y1) & (nzx >= left_x0) & (nzx < left_x1)).nonzero()[0]
-        good_right_inds = ((nzy >= y0) & (nzy < y1) & (nzx >= right_x0) & (nzx < right_x1)).nonzero()[0]
-        # Append these indices to the lists
-        leftIdx.append(good_left_inds)
-        rightIdx.append(good_right_inds)
-        # If you found > minpix pixels, recenter next window on their mean position
-        if len(good_left_inds) > minpix:
-            left = np.int(np.mean(nzx[good_left_inds]))
-        if len(good_right_inds) > minpix:        
-            right = np.int(np.mean(nzx[good_right_inds]))
+        leftRect = np.uint8(imageIn[y0:y1, left_x0:left_x1])
+        rightRect = np.uint8(imageIn[y0:y1, right_x0:right_x1])
+
+       
+        good_left_points = cv2.findNonZero(leftRect)
+        if (good_left_points != None):
+            good_left_points = good_left_points + [left_x0, y0]
+            leftPts.extend(good_left_points)
+            if len(good_left_points) > minpix:
+                left = np.int(np.mean(good_left_points,0)[0,0])
+ 
+        good_right_points = cv2.findNonZero(rightRect)
+        if (good_right_points != None):
+            good_right_points = good_right_points + [right_x0, y0] 
+            rightPts.extend(good_right_points)
+            if len(good_right_points) > minpix:        
+                right = np.int(np.mean(good_right_points,0)[0,0])
 
         
     
     # Concatenate the arrays of indices
-    leftIdx = np.concatenate(leftIdx)
-    rightIdx = np.concatenate(rightIdx)
+    #leftIdx = np.concatenate(leftIdx)
+    #rightIdx = np.concatenate(rightIdx)
 
     # Extract left and right line pixel positions
-    leftx = nzx[leftIdx]
-    lefty = nzy[leftIdx] 
-    rightx = nzx[rightIdx]
-    righty = nzy[rightIdx] 
 
     # Fit a second order polynomial to each
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    leftA = np.array(leftPts)
+    rightA = np.array(rightPts)
+    left_fit = np.polyfit(leftA[:,0,1], leftA[:,0,0], 2)
+    right_fit = np.polyfit(rightA[:,0,1], rightA[:,0,0], 2)
 
     ploty = np.arange(imgH)
     
