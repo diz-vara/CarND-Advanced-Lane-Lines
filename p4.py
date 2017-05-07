@@ -69,6 +69,8 @@ def rescale2width(img, newWidth):
 def process_image(image):
     oldH = image.shape[0]
     oldW = image.shape[1]
+
+    global mask;
     
     dst = cv2.undistort(image, mtx, dist, None, mtx)
     dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
@@ -83,12 +85,12 @@ def process_image(image):
     rwb[r > 2] = 255
     
     #remove noise
-    rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
-    
+    rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+    #rwbc = rwb
    
     #res, r_left, r_right = find_and_fit(rwbc)
     
-    res, searchImg = window_fit(rwbc)
+    res, searchImg, mask = window_fit(rwbc,mask)
     newwarp = cv2.warpPerspective(res, Minv, (oldW, oldH))
     
     result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)
@@ -97,7 +99,7 @@ def process_image(image):
 
 #%%
 
-plt.imshow(process_image(images[9]))
+plt.imshow(process_image(images[1]))
 
 
 
