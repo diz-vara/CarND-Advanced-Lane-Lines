@@ -12,6 +12,22 @@ Created on Sun Apr 30 11:04:14 2017
 
 def window_fit(imageIn, mask):
 
+    global left_fit
+    global right_fit
+    global leftPts
+    
+    global left_fitx
+    global right_fitx
+    
+    if (not 'left_fit' in globals()):
+        left_fit = np.zeros(3)
+        
+    if (not 'right_fit' in globals()):
+        right_fit = np.zeros(3)    
+    
+    theta = 0.5
+    
+    
     imgH = imageIn.shape[0]
     imgW = imageIn.shape[1]
 
@@ -22,7 +38,33 @@ def window_fit(imageIn, mask):
     out_img = np.dstack((imageIn, imageIn, imageIn))
     
     #empty mask - perform search
-    if (np.sum(mask==1) < 1e5 or np.sum(mask==2) < 1e5):
+    masked = imageIn & mask
+    leftPts = cv2.findNonZero(np.uint8(masked == 1))
+    rightPts = cv2.findNonZero(np.uint8(masked == 2))
+    
+    if (leftPts == None):
+        leftPts = []
+
+    if (rightPts == None):
+        rightPts = []
+
+
+    good_fit = len(leftPts) > 1e2 and len(rightPts) > 1e2
+    
+
+    if (good_fit):
+        leftY = leftPts[:,0,1]
+        rightY = rightPts[:,0,1]
+        if (np.max(leftY) - np.min(leftY) < imgH//3):
+            good_fit = False;
+            
+
+        if (np.max(rightY) - np.min(rightY) < imgH//3):
+            good_fit = False;
+            
+            
+    if (not good_fit):
+        print ('new detection')
         
         #if (sum (mask))
     
@@ -79,21 +121,50 @@ def window_fit(imageIn, mask):
             
         
     
-    else: 
+    #else: 
         #use masked
-        masked = imageIn & mask
-        leftPts = cv2.findNonZero(np.uint8(masked == 1))
-        rightPts = cv2.findNonZero(np.uint8(masked == 2))
+        #print('masked', len(leftPts), len(rightPts))
         
 
     # Fit a second order polynomial to each
     leftA = np.array(leftPts)
     rightA = np.array(rightPts)
-    left_fit = np.polyfit(leftA[:,0,1], leftA[:,0,0], 2)
-    right_fit = np.polyfit(rightA[:,0,1], rightA[:,0,0], 2)
-        
-        
+    
+    fill_color = (0,155, 0);
+
+    newLeftFit = np.polyfit(leftA[:,0,1], leftA[:,0,0], 2);
+    newRightFit = np.polyfit(rightA[:,0,1], rightA[:,0,0], 2);
+
     ploty = np.arange(imgH)
+
+
+    new_left_fitx = newLeftFit[0]*ploty**2 + newLeftFit[1]*ploty + newLeftFit[2]
+    new_right_fitx = newRightFit[0]*ploty**2 + newRightFit[1]*ploty + newRightFit[2]
+
+
+    t = theta
+    if (sum( left_fit != 0) == 0):
+        t = 1
+    else:
+        diff = np.mean(np.abs(new_left_fitx - left_fitx));
+        if (diff > 100):
+            print (diff, "old Left")
+            fill_color = (0, 0, 255)
+    left_fit = (1-t) * left_fit + t * newLeftFit;
+ 
+
+    t = theta
+    if (sum( right_fit != 0) == 0):
+        t = 1
+    else:
+        diff = np.mean(np.abs(new_right_fitx - right_fitx));
+        if (diff > 100):
+            print (diff, "old Right")
+            t = 0.1;
+            fill_color = (0, 0, 255)
+    right_fit = (1-t) * right_fit + t * newRightFit;
+        
+        
     
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
@@ -108,7 +179,7 @@ def window_fit(imageIn, mask):
 
     pts = np.vstack((pts_right[0], np.flipud(pts_left[0])))
     
-    cv2.fillPoly(color_warp, [pts], (0,155, 0));
+    cv2.fillPoly(color_warp, [pts], fill_color);
 
 
     #prepare mask for future search
@@ -165,19 +236,3 @@ def window_fit(imageIn, mask):
     return color_warp, out_img, mask#, left_curverad, right_curverad
 
     
-#%%
-
-
-
-
-
-
-
-#%%
-cw = cv2.resize(color_warp, (1280,738))
-newwarp = cv2.warpPerspective(cw, Minv, (1280, 738))
-plt.imshow(newwarp)
-
-
-result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)
-plt.imshow(result)

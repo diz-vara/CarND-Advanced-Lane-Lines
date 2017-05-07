@@ -94,24 +94,5 @@ def dir_thresh(img, sobel_kernel=3, thresh=(0, np.pi/2)):
     
 #%%
 # Choose a Sobel kernel size
-ksize = 3 # Choose a larger odd number to smooth gradient measurements
-
-# Apply each of the thresholding functions
-gradx = abs_sobel_thresh(image, orient='x', sobel_kernel=ksize, thresh=(20, 100))
-grady = abs_sobel_thresh(image, orient='y', sobel_kernel=ksize, thresh=(20, 100))
-mag_binary = mag_thresh(image, sobel_kernel=ksize, mag_thresh=(30,100))
-dir_binary = dir_threshold(image, sobel_kernel=ksize, thresh=(0.8, 1.2))
-
-combined = np.zeros_like(dir_binary)
-combined[((gradx == 1) & (grady == 1)) | ((mag_binary == 1) & (dir_binary == 1))] = 1
-         
-         
-f, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 20))
-f.tight_layout()
-ax1.imshow(image)
-ax1.set_title('Original Image', fontsize=20)
-ax2.imshow(combined, cmap='gray')
-ax2.set_title('Thresholded Gradient', fontsize=20)
-plt.subplots_adjust(left=0., right=1, top=0.9, bottom=0.)
 
 

@@ -66,20 +66,15 @@ def rescale2width(img, newWidth):
      
 #%%
 
-def process_image(image):
-    oldH = image.shape[0]
-    oldW = image.shape[1]
-
-    global mask;
+def threshold_image(image):
     
-    dst = cv2.undistort(image, mtx, dist, None, mtx)
-    dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
-                                 flags=cv2.INTER_LINEAR)
-    
-    rr = pipeline(dw)
+    rr = pipeline(image, (90,255))
     #combine
+
+
+
     r = (rr*255).astype(np.uint8)
-    
+
    
     rwb = np.zeros_like(r)
     rwb[r > 2] = 255
@@ -88,7 +83,22 @@ def process_image(image):
     rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
     #rwbc = rwb
    
+    return rwbc
+    
+def process_image(image):
+    global mask;
+
+    oldH = image.shape[0]
+    oldW = image.shape[1]
     #res, r_left, r_right = find_and_fit(rwbc)
+    dst = cv2.undistort(image, mtx, dist, None, mtx)
+    dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
+                                 flags=cv2.INTER_LINEAR)
+    
+    rwbc = threshold_image(dw)
+    
+    if (not 'mask' in globals()):
+        mask = np.zeros_like(rwbc)
     
     res, searchImg, mask = window_fit(rwbc,mask)
     newwarp = cv2.warpPerspective(res, Minv, (oldW, oldH))
@@ -96,9 +106,21 @@ def process_image(image):
     result = cv2.addWeighted(dst, 0.8, newwarp, 0.3, 0)
     return result
     
+def prc(image):
+    oldH = image.shape[0]
+    oldW = image.shape[1]
+    #res, r_left, r_right = find_and_fit(rwbc)
+    dst = cv2.undistort(image, mtx, dist, None, mtx)
+    dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
+                                 flags=cv2.INTER_LINEAR)
+    
+    st = stack(dw, (80,255))
+    return st   
 
 #%%
 
+left_fit = np.zeros(3)
+right_fit = np.zeros(3)
 plt.imshow(process_image(images[1]))
 
 
@@ -107,6 +129,9 @@ plt.imshow(process_image(images[1]))
 
 from moviepy.editor import VideoFileClip
 #from IPython.display import HTML
+    
+left_fit = np.zeros(3)
+right_fit = np.zeros(3)
 
 video_output = 'out/first.mp4'
 clip2 = VideoFileClip('project_video.mp4')
