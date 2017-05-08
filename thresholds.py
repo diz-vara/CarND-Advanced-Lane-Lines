@@ -2,13 +2,30 @@
 """
 Created on Sat Apr 15 22:00:35 2017
 
-@author: diz
+@author: Anton Varfolomeev
 """
 
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+
+
+def threshold_image(image, thresh=25):
+    
+    red_channel = image[:,:,0];
+   
+    blurred = cv2.medianBlur(red_channel,25);
+    diff = cv2.subtract(red_channel, blurred)
+    binary = cv2.threshold(diff, thresh, 255, cv2.THRESH_BINARY)[1];
+    out = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+
+    return out
+
+#%%
+
+#different thresholds and thresholding pipeline from the lesson
+#and previous versions
 
 def abs_sobel_thresh(img, orient='x', sobel_kernel=3, thresh=(0, 255)):
     
@@ -115,21 +132,6 @@ def pipeline(image, s_thresh=(170, 255), sx_thresh=(60, 255)):
     result = ( ((m_binary == 1) & (d_binary == 1)) | (sxbinary == 1) | (s_binary==1))
     return result
     
-#%%
-def oldpipe (img, thresh = (10,255)):
-    oldH = img.shape[0]
-    oldW = img.shape[1]
-
-    r_channel = img[:,:,0];
-   
-    blurred = cv2.medianBlur(r_channel,25);
-    diff = cv2.subtract(r_channel, blurred)
-    
-    binary = np.zeros_like(diff)
-    binary[ ((diff >= thresh[0]) & (diff <= thresh[1]))] = 1
-    out = binary
-
-    return out
     
 #%%    
 def stack(image, s_thresh=(100, 255), sx_thresh=(60, 255)):
@@ -165,20 +167,16 @@ def stack(image, s_thresh=(100, 255), sx_thresh=(60, 255)):
     #result = ( ((m_binary == 1) & (d_binary == 1)) | (sxbinary == 1) | (s_binary==1))
     return color_binary
     
-#%%
-def threshold_image(image):
-    
-    rr = oldpipe(image, (25,255))
 
-    r = (rr*255).astype(np.uint8)
-
-   
-    rwb = np.zeros_like(r)
-    rwb[r > 2] = 255
+def prc(image):
+    oldH = image.shape[0]
+    oldW = image.shape[1]
+    #res, r_left, r_right = find_and_fit(rwbc)
+    dst = cv2.undistort(image, mtx, dist, None, mtx)
+    dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
+                                 flags=cv2.INTER_LINEAR)
     
-    #remove noise
-    rwb = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
-    #rwbc = rwb
-   
-    return rwb
-        
+    st = stack(dw, (80,255))
+    return st   
+
+ 

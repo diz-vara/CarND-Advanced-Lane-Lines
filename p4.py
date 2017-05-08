@@ -56,21 +56,11 @@ for entry in os.scandir(test_dir):
 
 #%%
 
-
-    
-
-     
-
-#%%
-
 lineLeft = Line(1)
 lineRight = Line(2)
-left_fit = np.zeros(3)
-right_fit = np.zeros(3)
-leftPts = []
-rightPts=[]
 mask=None
-plt.imshow(process_image(images[4]))
+prc = process_image(images[4])
+plt.imshow(prc)
 
 
 
@@ -84,7 +74,7 @@ right_fit = np.zeros(3)
 leftPts = [] 
 rightPts = []
 
-video_output = 'out/old_4.mp4'
+video_output = 'out/result.mp4'
 clip2 = VideoFileClip('project_video.mp4')
 first_clip = clip2.fl_image(process_image)
 get_ipython().magic('time first_clip.write_videofile(video_output, audio=False)')

@@ -2,7 +2,7 @@
 """
 Created on Sun Apr 30 11:04:14 2017
 
-@author: diz
+@author: Anton Varfolomeev
 """
 
 
@@ -15,7 +15,10 @@ def sliding_fit (imageIn, search_range):
     imgH = imageIn.shape[0]
     imgW = imageIn.shape[1]
 
-    out_img = np.dstack((imageIn, imageIn, imageIn))
+    #image for debug output
+    #commented out to save time
+    
+    #out_img = np.dstack((imageIn, imageIn, imageIn))
 
 
     hstHalf = np.sum(imageIn[imgH//2:imgH-imgH-30,:], axis = 0)
@@ -47,8 +50,8 @@ def sliding_fit (imageIn, search_range):
         right_x0 = right - search_range
         right_x1 = right + search_range
         
-        cv2.rectangle(out_img,(left_x0,y0),(left_x1,y1),(0,255,0), 2) 
-        cv2.rectangle(out_img,(right_x0,y0),(right_x1,y1),(0,255,0), 2) 
+        #cv2.rectangle(out_img,(left_x0,y0),(left_x1,y1),(0,255,0), 2) 
+        #cv2.rectangle(out_img,(right_x0,y0),(right_x1,y1),(0,255,0), 2) 
     
         leftRect = np.uint8(imageIn[y0:y1, left_x0:left_x1])
         rightRect = np.uint8(imageIn[y0:y1, right_x0:right_x1])
@@ -68,10 +71,11 @@ def sliding_fit (imageIn, search_range):
             if len(good_right_points) > minpix:        
                 right = np.int(np.mean(good_right_points,0)[0,0])
     
-    return leftPts, rightPts, out_img
+    return leftPts, rightPts #, out_img
 
-
-def window_fit(imageIn):
+    
+#fit 2d oreder polinomials to the left and right lines
+def poly_fit(imageIn):
 
     
     global mask
@@ -87,9 +91,11 @@ def window_fit(imageIn):
     ym_per_pix = 60/imgH # meters per pixel in y dimension
     xm_per_pix = 3.7/730 #imgW # meters per pixel in x dimension
 
-    
+    #use mask from prev. detection
     masked = imageIn & mask
+    #bit-value for the left line
     leftPts = cv2.findNonZero(np.uint8(masked == 1))
+    #bit-value for the right line
     rightPts = cv2.findNonZero(np.uint8(masked == 2))
     
     if (leftPts == None):
@@ -100,9 +106,8 @@ def window_fit(imageIn):
 
 
 
+    #we must have enough points in both lines
     good_fit = len(leftPts) > 1e2 and len(rightPts) > 1e2
-    
-
     #check for too short fits
     if (good_fit):
         leftY = leftPts[:,0,1]
@@ -114,7 +119,7 @@ def window_fit(imageIn):
     #empty mask - perform sliding search
           
     if (not good_fit):
-        leftPts, rightPts, out = sliding_fit(imageIn, search_range)
+        leftPts, rightPts = sliding_fit(imageIn, search_range)
         print ('new detection')
         
         
@@ -129,6 +134,7 @@ def window_fit(imageIn):
     lineRight.new_fit(rightPts, ploty);                              
                                   
    
+    #plot overlay
     zero_plane = np.zeros_like(imageIn).astype(np.uint8)
     overlay = np.dstack((zero_plane, zero_plane, zero_plane))
 
@@ -157,16 +163,14 @@ def window_fit(imageIn):
     left_rad = lineLeft.radius(y_eval)
     right_rad = lineRight.radius(y_eval) 
 
-    
-    #print(left_curverad, 'm', right_curverad, 'm')
     curve_m = (left_rad + right_rad)/2
     center = (imgW - (lineLeft.bottomX() + lineRight.bottomX()))/2 * xm_per_pix;
-
-                 
     
     return overlay, curve_m, center
 
 #%%
+#helper drawing function 
+
 def fill_between_lines(img, leftX, rightX,y, color):
     pts_left = np.array([np.transpose(np.vstack([leftX, y]))]).astype(np.int)
     pts_right = np.array([np.transpose(np.vstack([rightX, y]))]).astype(np.int)
@@ -177,26 +181,26 @@ def fill_between_lines(img, leftX, rightX,y, color):
 
 #%%
 
-
+#main processing pipeline
 def process_image(image):
     global mask;
 
     oldH = image.shape[0]
     oldW = image.shape[1]
        
-    rwbc = threshold_image(image)
+    thr = threshold_image(image)
 
      #res, r_left, r_right = find_and_fit(rwbc)
-    dst = cv2.undistort(rwbc, mtx, dist, None, mtx)
-    dw = cv2.warpPerspective(dst, M, (oldW, oldH), flags=cv2.INTER_NEAREST)
+    dst = cv2.undistort(thr, mtx, dist, None, mtx)
+    warped = cv2.warpPerspective(dst, M, (oldW, oldH), flags=cv2.INTER_NEAREST)
     
-    dw[dw > 2] = 255
+    warped = cv2.threshold(warped, 2, 255, cv2.THRESH_BINARY)[1];
     
-    if (not 'mask' in globals() or mask == None or mask.shape != rwbc.shape):
-        mask = np.zeros_like(dw)
+    if (not 'mask' in globals() or mask == None or mask.shape != warped.shape):
+        mask = np.zeros_like(warped)
     
-    res, radius, center = window_fit(dw)
-    newwarp = cv2.warpPerspective(res, Minv, (oldW, oldH))
+    overlay, radius, center = poly_fit(warped)
+    newwarp = cv2.warpPerspective(overlay, Minv, (oldW, oldH))
     
     result = cv2.addWeighted(image, 0.8, newwarp, 0.3, 0)
     
@@ -227,16 +231,6 @@ def process_image(image):
 
 
     return result
+  
     
-def prc(image):
-    oldH = image.shape[0]
-    oldW = image.shape[1]
-    #res, r_left, r_right = find_and_fit(rwbc)
-    dst = cv2.undistort(image, mtx, dist, None, mtx)
-    dw = cv2.warpPerspective(dst, M, (oldW, oldH), 
-                                 flags=cv2.INTER_LINEAR)
-    
-    st = stack(dw, (80,255))
-    return st   
-
     

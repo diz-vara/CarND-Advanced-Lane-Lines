@@ -2,7 +2,7 @@
 """
 Created on Sat May  6 14:12:07 2017
 
-@author: diz
+@author: Anton Varfolomeev
 """
 
 #Define a class to receive the characteristics of each line detection
@@ -69,5 +69,6 @@ class Line():
         curve_rad = ((1 + (2*self.fit_in_meters[0]*y_eval*self.ym_per_pix + self.fit_in_meters[1])**2)**1.5) / (2*self.fit_in_meters[0])
         return curve_rad
         
+    #return x-coordinage of the bottom of the line (intercept)    
     def bottomX(self):
         return self.old_x[-1]

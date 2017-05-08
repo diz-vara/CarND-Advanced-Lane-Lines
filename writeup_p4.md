@@ -142,13 +142,14 @@ you'll see effect of undistortion few linew below.
 
 
 
-For thresholding, I used a cobination of:
+At the begining, I used a cobination of:
 - color threshold in S-channels of the HLS color space
 - sobel magntiude threshold
 - sobelX treshold
 
 The code for thresholding (adoprted from the lesson with
-minor modifications) you can find in the file `stack.py` 
+minor modifications) you can find in the file `thresholds.py` 
+(lines 25 - 144).
 
 In this image you see 'test2' image with overlayed binary images: 
 - blue for S-channel threshold
@@ -160,9 +161,23 @@ In this image you see 'test2' image with overlayed binary images:
 Here you can clearly see, pronounced undistortion effect on the sign - but
 not on the lanes.
 
-In my 'real life' (outside of carND), I've spent a lot of time analysing different
-line-extraction approaches, and I can definitely say, and I can definitely say, that this
-one is not the best. But it works :)
+Yet, after several tests (inluding 'challenge' video and several far more challenging
+videos from my huge collection), I reverted to the simple pipeline I used in P1:
+thresholding of the difference between red channel of the image and it's blurred version:
+```
+    red_channel = image[:,:,0];
+    blurred = cv2.medianBlur(red_channel,25);
+    diff = cv2.subtract(red_channel, blurred)
+    binary = cv2.threshold(diff, thresh, 255, cv2.THRESH_BINARY)[1];
+    out = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+```
+(file `thresholds.py`, lines 14-24).
+
+It works better in many different situations - and it is four times faster!
+
+Result of the thresholding is shown below:
+
+<img src="./output_images/im4_2(thr).png" width="600">
 
 
 
@@ -208,6 +223,9 @@ Result of coordinate transformation is shown below:
  
 <img src="./output_images/warped.png" width="600">
 
+(In the actual pipeline, I applyed coordinate transformation **after** thresholding - 
+this sequence gives more consistent results.)
+
 #### 4. Lane-line pixels and polynomial fit
 
 At this point, it became possible to apply thresholding, undistortion and perspective
@@ -218,33 +236,56 @@ I also removed noise (small particles) by simple 'open' operation
 
 <img src="./output_images/lines_warped.png" width="400">
 
+Initially, lines were identified by a sliding window search (file `window_fit.py`, lines 13-74).
+I replaces explicit points selection from the lession by OpenCV `findNonZero()`, apllyed to
+the search rectangles.
+ 
+Process of the search is illustrated below:
+
+<img src="./output_images/sliding_search.png" width="400">
+
+In subsequent frames, I just masked binary image with the mask, defined by previous
+polinomial fit:
+
+<img src="./output_images/mask.png" width="400">
+
+(I used separate values for left-line and right-line masks).
+
+When pixels belonging to the left and right lines were identified, I used 
+`np.polyfit()` to compute second-order polynomial. Computed polynomials were
+exponentioally smoothed (file `line.py`, lines 42-67).
+
+After computation, the resulted region was plotted on the separate 'overaly' image
+(file `window_fit.py`, lines 137-144), 
+
+<img src="./output_images/im4_4(lane).png" width="400">
 
 
+Inverted percpective transformation matrix was applyed to the overlay:
+
+<img src="./output_images/im4_5(lane_unw).png" width="400">
+
+and mask image was formed
+(file `window_fit.py`, lines 147-160)
 
 
-#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+Actual lane curvature was calculated by a given formula and apporximate calibartion
+values (file `line.py`, lines 68-70), resulted values were averaged, and 
+shift from the center was estimated (file `window_fit.py`, lines 162-167)
 
-I did this in lines # through # in my code in `my_other_file.py`
+<img src="./output_images/im4_6(result).png" width="400">
 
-#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+Then this pipeline was applyed to the projet video:
+(file `P4.py`, lines 67-81)
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
 
-![alt text][image6]
+Here's a [link to my video result](./project_result.mp4)
 
 ---
 
-###Pipeline (video)
+### Discussion
 
-####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
-
-Here's a [link to my video result](./project_video.mp4)
-
----
-
-###Discussion
-
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
 
