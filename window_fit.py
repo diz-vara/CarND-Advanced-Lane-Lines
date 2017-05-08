@@ -79,7 +79,6 @@ def window_fit(imageIn):
     global left_fit_cr
     global right_fit_cr
 
-    global leftPts
     
     global left_fitx
     global right_fitx
@@ -152,6 +151,7 @@ def window_fit(imageIn):
         # Fit new polynomials to x,y in world space
         new_left_fit_cr = np.polyfit(leftA[:,0,1]*ym_per_pix, 
                                      leftA[:,0,0]*xm_per_pix, 2)
+        
         new_left_fitx = new_left_fit[0]*ploty**2 + new_left_fit[1]*ploty + new_left_fit[2]
         t = tau
         if (sum( left_fit != 0) == 0):
@@ -159,10 +159,10 @@ def window_fit(imageIn):
             left_fit_cr = left_fit
         else:
             diff = np.mean(np.abs(new_left_fitx - left_fitx));
-            if (diff > 70):
+            if (diff > 100):
                 print (" old Left, ")
                 fill_color = (0, 100, 0)
-                #t = 0.1
+                t = 0.95
         left_fit = (t) * left_fit + (1-t) * new_left_fit;
         left_fit_cr = (t) * left_fit_cr + (1-t) * new_left_fit_cr;
 
@@ -183,69 +183,43 @@ def window_fit(imageIn):
             right_fit_cr = right_fit
         else:
             diff = np.mean(np.abs(new_right_fitx - right_fitx));
-            if (diff > 70):
+            if (diff > 100):
                 print ("old Right ")
-                #t = 0.1;
+                t = 0.95;
                 fill_color = (0, 100, 0)
         right_fit = t * right_fit + (1-t) * new_right_fit;
         right_fit_cr = t * right_fit_cr + (1-t) * new_right_fit_cr;
             
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
     
-
-    
-    
    
     warp_zero = np.zeros_like(imageIn).astype(np.uint8)
     color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
-    
-    pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))]).astype(np.int)
-    pts_right = np.array([np.transpose(np.vstack([right_fitx, ploty]))]).astype(np.int)
 
-    pts = np.vstack((pts_right[0], np.flipud(pts_left[0])))
+    fill_between_lines(color_warp, left_fitx, right_fitx, ploty, fill_color)
     
-    cv2.fillPoly(color_warp, [pts], fill_color);
 
 
     #prepare mask for future search
     mask = np.zeros_like(imageIn)
 
-
     #left search range
     fitx0 = left_fitx - search_range;
     fitx1 = left_fitx + search_range;
-    
-    pts_left = np.array([np.transpose(np.vstack([fitx0, ploty]))]).astype(np.int)
-    pts_right = np.array([np.transpose(np.vstack([fitx1, ploty]))]).astype(np.int)
-
-    pts = np.vstack((pts_right[0], np.flipud(pts_left[0])))
-    cv2.fillPoly(mask, [pts], (1));
-    #cv2.polylines(color_warp, [pts], False, (200,0,0))
-
+    fill_between_lines(mask, fitx0, fitx1, ploty, (1))
+   
 
     #right search range
     fitx0 = right_fitx - search_range;
     fitx1 = right_fitx + search_range;
+    fill_between_lines(mask, fitx0, fitx1, ploty, (2))
     
-    pts_left = np.array([np.transpose(np.vstack([fitx0, ploty]))]).astype(np.int)
-    pts_right = np.array([np.transpose(np.vstack([fitx1, ploty]))]).astype(np.int)
-
-    pts = np.vstack((pts_right[0], np.flipud(pts_left[0])))
-    cv2.fillPoly(mask, [pts], (2));
-    #cv2.polylines(color_warp, [pts], False, (0,0,200))
-
-    #out_img = cv2.addWeighted(out_img, 0.8, color_warp, 0.3, 0)
-
-    
-    #print (left_fit_cr)
     
     # Calculate the new radii of curvature
     left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / (2*left_fit_cr[0])
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / (2*right_fit_cr[0])
 
-                            
     
-    # Now our radius of curvature is in meters
     #print(left_curverad, 'm', right_curverad, 'm')
     curve_m = (left_curverad + right_curverad)/2
     center = (imgW - (left_fitx[-1] + right_fitx[-1]))/2 * xm_per_pix;
@@ -255,6 +229,14 @@ def window_fit(imageIn):
     return color_warp, curve_m, center
 
 #%%
+def fill_between_lines(img, leftX, rightX,y, color):
+    pts_left = np.array([np.transpose(np.vstack([leftX, y]))]).astype(np.int)
+    pts_right = np.array([np.transpose(np.vstack([rightX, y]))]).astype(np.int)
+
+    pts = np.vstack((pts_right[0], np.flipud(pts_left[0])))
+    cv2.fillPoly(img, [pts], color);
+    
+
 #%%
 
 
@@ -290,7 +272,7 @@ def process_image(image):
     radius = np.abs(radius)
     
     if (radius < 5000):
-        text = 'Curve radius: ' + '{:4.0f}'.format(radius) + ' m' + direction
+        text = 'Curve radius: ' + '{:4.0f}'.format(radius) + ' m ' + direction
     else:
         text = 'Straight'
     cv2.putText(result, text, (20,50), cv2.FONT_HERSHEY_DUPLEX, 
