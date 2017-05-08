@@ -116,31 +116,20 @@ def pipeline(image, s_thresh=(170, 255), sx_thresh=(60, 255)):
     return result
     
 #%%
-def rescale2width(img, newWidth):
-    scale = newWidth/img.shape[1]
-    out = cv2.resize(img, (0,0), fx=scale, fy=scale)
-    return out,scale
-    
 def oldpipe (img, thresh = (10,255)):
     oldH = img.shape[0]
     oldW = img.shape[1]
 
     r_channel = img[:,:,0];
-    #r_channel, scale = rescale2width(r_channel, 480)
+   
     blurred = cv2.medianBlur(r_channel,25);
     diff = cv2.subtract(r_channel, blurred)
-    #diff = diff*255//np.max(diff)
+    
     binary = np.zeros_like(diff)
     binary[ ((diff >= thresh[0]) & (diff <= thresh[1]))] = 1
     out = binary
-    #out = cv2.resize(binary, (oldW, oldH),cv2.INTER_NEAREST)
-    #m_binary = mag_thresh(diff,mag_thresh=(100,256), sobel_kernel=11);
-    #d_binary = dir_thresh(diff, sobel_kernel = 15, thresh=(0.8,1.3));
-
-    #result = ( ((m_binary == 1) & (d_binary == 1)) | (binary == 1) )
 
     return out
-    
     
 #%%    
 def stack(image, s_thresh=(100, 255), sx_thresh=(60, 255)):
@@ -180,9 +169,6 @@ def stack(image, s_thresh=(100, 255), sx_thresh=(60, 255)):
 def threshold_image(image):
     
     rr = oldpipe(image, (25,255))
-    #combine
-
-
 
     r = (rr*255).astype(np.uint8)
 
@@ -191,8 +177,8 @@ def threshold_image(image):
     rwb[r > 2] = 255
     
     #remove noise
-    rwbc = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+    rwb = cv2.morphologyEx(rwb, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
     #rwbc = rwb
    
-    return rwbc
+    return rwb
         
