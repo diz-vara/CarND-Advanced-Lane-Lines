@@ -32,9 +32,9 @@ src = np.float32(
 
 dst = np.float32(
    [[ lines[0][0], height],
-    [ lines[0][0], height*0.25], 
+    [ lines[0][0], height*0.4], 
     [ lines[1][0], height], 
-    [ lines[1][0], height*0.25]])
+    [ lines[1][0], height*0.4]])
 
 M = cv2.getPerspectiveTransform(src, dst)
 Minv = cv2.getPerspectiveTransform(dst, src)
