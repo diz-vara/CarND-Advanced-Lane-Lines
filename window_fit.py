@@ -97,7 +97,7 @@ def window_fit(imageIn):
     imgH = imageIn.shape[0]
     imgW = imageIn.shape[1]
 
-    y_eval = imgH-10
+    y_eval = imgH-5
 
 
     search_range = 50
@@ -105,7 +105,6 @@ def window_fit(imageIn):
     xm_per_pix = 3.7/730 #imgW # meters per pixel in x dimension
 
     
-    #empty mask - perform search
     masked = imageIn & mask
     leftPts = cv2.findNonZero(np.uint8(masked == 1))
     rightPts = cv2.findNonZero(np.uint8(masked == 2))
@@ -121,17 +120,16 @@ def window_fit(imageIn):
     good_fit = len(leftPts) > 1e2 and len(rightPts) > 1e2
     
 
+    #check for too short fits
     if (good_fit):
         leftY = leftPts[:,0,1]
         rightY = rightPts[:,0,1]
-        if (np.max(leftY) - np.min(leftY) < imgH//4):
+        if (np.max(leftY) - np.min(leftY) < imgH//4 and np.max(rightY) - np.min(rightY) < imgH//4):
             good_fit = False;
             
 
-        if (np.max(rightY) - np.min(rightY) < imgH//4):
-            good_fit = False;
-            
-            
+    #empty mask - perform sliding search
+          
     if (not good_fit):
         leftPts, rightPts, out = sliding_fit(imageIn, search_range)
         print ('new detection')
