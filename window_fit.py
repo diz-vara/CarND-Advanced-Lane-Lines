@@ -73,25 +73,8 @@ def sliding_fit (imageIn, search_range):
 
 def window_fit(imageIn):
 
-    global left_fit
-    global right_fit
-
-    global left_fit_cr
-    global right_fit_cr
-
-    
-    global left_fitx
-    global right_fitx
     
     global mask
-    
-    if (not 'left_fit' in globals()):
-        left_fit = np.zeros(3)
-        
-    if (not 'right_fit' in globals()):
-        right_fit = np.zeros(3)    
-    
-    tau = 0.8
     
     
     imgH = imageIn.shape[0]
@@ -136,65 +119,22 @@ def window_fit(imageIn):
         
         
 
-    # Fit a second order polynomial to each
-    leftA = np.array(leftPts)
-    rightA = np.array(rightPts)
     
     fill_color = (0,155, 0);
 
     ploty = np.arange(imgH)
 
-    if (len(leftA) > 0):
-        new_left_fit = np.polyfit(leftA[:,0,1], leftA[:,0,0], 2);
-        # Fit new polynomials to x,y in world space
-        new_left_fit_cr = np.polyfit(leftA[:,0,1]*ym_per_pix, 
-                                     leftA[:,0,0]*xm_per_pix, 2)
-        
-        new_left_fitx = new_left_fit[0]*ploty**2 + new_left_fit[1]*ploty + new_left_fit[2]
-        t = tau
-        if (sum( left_fit != 0) == 0):
-            t = 0
-            left_fit_cr = left_fit
-        else:
-            diff = np.mean(np.abs(new_left_fitx - left_fitx));
-            if (diff > 100):
-                print (" old Left, ")
-                fill_color = (0, 100, 0)
-                t = 0.95
-        left_fit = (t) * left_fit + (1-t) * new_left_fit;
-        left_fit_cr = (t) * left_fit_cr + (1-t) * new_left_fit_cr;
-
-    left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]
-
     
+    lineLeft.new_fit(leftPts, ploty);                              
+    lineRight.new_fit(rightPts, ploty);                              
                                   
-                                  
-    if (len(rightA) > 0):
-        new_right_fit = np.polyfit(rightA[:,0,1], rightA[:,0,0], 2);
-        new_right_fit_cr = np.polyfit(rightA[:,0,1]*ym_per_pix, 
-                                      rightA[:,0,0]*xm_per_pix, 2)
-        new_right_fitx = new_right_fit[0]*ploty**2 + new_right_fit[1]*ploty + new_right_fit[2]
-
-        t = tau
-        if (sum( right_fit != 0) == 0):
-            t = 0
-            right_fit_cr = right_fit
-        else:
-            diff = np.mean(np.abs(new_right_fitx - right_fitx));
-            if (diff > 100):
-                print ("old Right ")
-                t = 0.95;
-                fill_color = (0, 100, 0)
-        right_fit = t * right_fit + (1-t) * new_right_fit;
-        right_fit_cr = t * right_fit_cr + (1-t) * new_right_fit_cr;
-            
-    right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
-    
    
-    warp_zero = np.zeros_like(imageIn).astype(np.uint8)
-    color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
+    zero_plane = np.zeros_like(imageIn).astype(np.uint8)
+    overlay = np.dstack((zero_plane, zero_plane, zero_plane))
 
-    fill_between_lines(color_warp, left_fitx, right_fitx, ploty, fill_color)
+    fill_color = (0,155,0)
+    fill_between_lines(overlay, lineLeft.old_x, lineRight.old_x, ploty,
+                       fill_color)
     
 
 
@@ -202,29 +142,29 @@ def window_fit(imageIn):
     mask = np.zeros_like(imageIn)
 
     #left search range
-    fitx0 = left_fitx - search_range;
-    fitx1 = left_fitx + search_range;
+    fitx0 = lineLeft.old_x - search_range;
+    fitx1 = lineLeft.old_x + search_range;
     fill_between_lines(mask, fitx0, fitx1, ploty, (1))
    
 
     #right search range
-    fitx0 = right_fitx - search_range;
-    fitx1 = right_fitx + search_range;
+    fitx0 = lineRight.old_x - search_range;
+    fitx1 = lineRight.old_x + search_range;
     fill_between_lines(mask, fitx0, fitx1, ploty, (2))
     
     
     # Calculate the new radii of curvature
-    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / (2*left_fit_cr[0])
-    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / (2*right_fit_cr[0])
+    left_rad = lineLeft.radius(y_eval)
+    right_rad = lineRight.radius(y_eval) 
 
     
     #print(left_curverad, 'm', right_curverad, 'm')
-    curve_m = (left_curverad + right_curverad)/2
-    center = (imgW - (left_fitx[-1] + right_fitx[-1]))/2 * xm_per_pix;
+    curve_m = (left_rad + right_rad)/2
+    center = (imgW - (lineLeft.bottomX() + lineRight.bottomX()))/2 * xm_per_pix;
 
                  
     
-    return color_warp, curve_m, center
+    return overlay, curve_m, center
 
 #%%
 def fill_between_lines(img, leftX, rightX,y, color):

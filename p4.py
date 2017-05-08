@@ -63,12 +63,14 @@ for entry in os.scandir(test_dir):
 
 #%%
 
+lineLeft = Line(1)
+lineRight = Line(2)
 left_fit = np.zeros(3)
 right_fit = np.zeros(3)
 leftPts = []
 rightPts=[]
 mask=None
-plt.imshow(process_image(images[8]))
+plt.imshow(process_image(images[4]))
 
 
 
