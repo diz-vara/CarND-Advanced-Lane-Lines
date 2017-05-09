@@ -1,19 +1,8 @@
-## Advanced Lane Finding
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
 
-In this project, your goal is to write a software pipeline to identify the lane boundaries in a video, but the main output or product we want you to create is a detailed writeup of the project.  Check out the [writeup template](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup.  
 
-Creating a great writeup:
----
-A great writeup should include the rubric points as well as your description of how you addressed each point.  You should include a detailed description of the code used in each step (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
 
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
----
+# **Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
 
@@ -22,14 +11,297 @@ The goals / steps of this project are the following:
 * Use color transforms, gradients, etc., to create a thresholded binary image.
 * Apply a perspective transform to rectify binary image ("birds-eye view").
 * Detect lane pixels and fit to find the lane boundary.
-* Determine the curvature of the lane and vehicle position with respect to center.
+* Determine the curvature of the lane and vehicle position with respect to centre.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-The images for camera calibration are stored in the folder called `camera_cal`.  The images in `test_images` are for testing your pipeline on single frames.  If you want to extract more test images from the videos, you can simply use an image writing method like `cv2.imwrite()`, i.e., you can read the video in frame by frame as usual, and for frames you want to save for later you can write to an image file.  
 
-To help the reviewer examine your work, please save examples of the output from each stage of your pipeline in the folder called `ouput_images`, and include a description in your writeup for the project of what each image shows.    The video called `project_video.mp4` is the video your pipeline should work well on.  
 
-The `challenge_video.mp4` video is an extra (and optional) challenge for you if you want to test your pipeline under somewhat trickier conditions.  The `harder_challenge.mp4` video is another optional challenge and is brutal!
+### Camera Calibration
 
-If you're feeling ambitious (again, totally optional though), don't stop there!  We encourage you to go out and take video of your own, calibrate your camera and show us how you would implement this project from scratch!
+
+
+The code for this step is contained in lines # through # of the file called `calibrate.py`).  
+
+I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. I assumed (according to project instructions) that calibration pattern will be fixed, with 6 rows and 
+9 columns of 'inner crosses'. Next assumptions are:
+  - that calibration pattern is flat (z == 0 for all corners)
+  - that calibration consists of squares with some (arbitrary) side length.
+  I assigned to that length a value of 40 - just because in several projects I used calibration pattern
+with 40 mm squares.
+Array of 54 ( 9 x 6 ) 3d points, formed in that way, was added to the **objPoints** list for each image,
+in which `cv2.findChessboardCorners` function idendified all the corners.
+
+I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+
+After the first run, it became obvious, that:
+- corners were not found in images 1,4 and 5
+- after uhdistortion, left vertical line in the undistorted image was not straight - it was curved 'outside'
+(in the direction opposite to that in original image):
+
+Original (distorted) image				
+
+<img src="./output_images/cal_distorted.png" width="500">
+
+
+Undistorted image
+
+<img src="./output_images/cal_undistorted_0.png" width="500">
+ 
+
+
+Then I attempted to use different pattern size in cases where `cv2.findChessboardCorners` failed (file `calibration.py`, lines 51-60. For that purpose, I re-factored the creation of pattern's object coordinates into
+separate function (lines 16-23 of the same file). It helped with the first image, but not with images 4 and 5. In ordinary situation
+I would live them alone, and asked user to shot additional images, reminding her that all 6x9 inner crosses
+are to be visible in every shot. But here I can't make new shots. And I need these images, because they are
+'close-ups', with more prominent distortion.
+
+As the source of the error was the irregularity of detected patterns (different number of corners in different
+rows or columns, I edited these images, wiping-out portions of them. Here are two modified images:
+
+**Modified calibration4.jpg ( pattern 8x6) and calibration5.jpg ( pattern 9x5)**
+
+<img src="./camera_cal/calibration4.jpg" width="400">
+<img src="./camera_cal/calibration5.jpg" width="400">
+
+
+After this modification all 20 calibration images were processed, but undistorted images remained curved.
+
+Then I noticed, that by default `cv2.calibrateCamera()` calculates only 5 'basic' distortion coefficients -
+and do not calculate coefficients for more advanced camera models. I turned corresponding flags on, one by 
+one - and all models were included. Addition of 'Rational model' improved things a bit. With all tilted
+model lines became straight - but additional perspective distortion was added (third image).
+I think, we need more data to calculate these coefficients.
+Unfortunately , in current version of OpenCV thing prism model without tilted model does not work.
+So, I decided to use rational model (8 distortion coefficients, second image).
+
+flags = 0; 5 coefficients
+
+<img src="./output_images/cal_undistorted_0.png" width="500">
+
+
+
+flags = CALIB\_RATIONAL_MODEL; 8 coefficietns
+
+<img src="./output_images/cal_undistorted_1.png" width="500">
+
+
+flags = CALIB\_RATIONAL\_MODEL | CALIB\_THIN\_PRISM\_MODEL; 12 coefficients
+
+<img src="./output_images/cal_undistorted_2.png" width="500">
+
+
+
+flags = CALIB\_RATIONAL\_MODEL | CALIB\_THIN\_PRISM\_MODEL | CALIB\_TILTED\_MODEL; 14 coefficients
+
+<img src="./output_images/cal_undistorted_3.png" width="500">
+
+*(To use THIN\_PRISM\_MODEL, you need to update OpenCV to version 3.2)*
+
+We can also compare original and undistorted images by superimposing them.
+
+Here is original and 'rational model' superposition.
+
+<img src="./output_images/dst_und1_stack.png" width="500">
+
+You can see that all differences are near image borders, at the centre both images 
+coincide. And this is a normal situation for almost any lens. I have only one lens
+in my collection, which may give significant distortions at the centre of
+the frame - at that one is the 'artistic' LensBaby 2.0.
+
+<img src="./output_images/lensbaby.jpg" width="300">
+
+### Pipeline (single images)
+
+Examples above show that lens distortion is minimal at the centre of the images,
+where we expect lines to appear. So, I'll not publish 'undistorted lanes' here - 
+you'll see effect of undistortion few lines below.
+
+
+
+#### 2. Colours, gradients, thresholds.
+
+
+
+At the beginning, I used a combination of:
+- colour threshold in S-channels of the HLS colour space
+- Sobel magnitude threshold
+- SobelX threshold
+
+The code for thresholding (adopted from the lesson with
+minor modifications) you can find in the file `thresholds.py` 
+(lines 25 - 144).
+
+In this image you see 'test2' image with overlayed binary images: 
+- blue for S-channel threshold
+- green for sobel magnitude
+- red for sobelX
+
+<img src="./output_images/test2+thr.png" width="800">
+
+Here you can clearly see, pronounced undistortion effect on the sign - but
+not on the lanes.
+
+Yet, after several tests (inluding 'challenge' video and several far more challenging
+videos from my huge collection), I reverted to the simple pipeline I used in P1:
+thresholding of the difference between red channel of the image and it's blurred version:
+```
+    red_channel = image[:,:,0];
+    blurred = cv2.medianBlur(red_channel,25);
+    diff = cv2.subtract(red_channel, blurred)
+    binary = cv2.threshold(diff, thresh, 255, cv2.THRESH_BINARY)[1];
+    out = cv2.morphologyEx(binary, cv2.MORPH_OPEN, np.ones((3,3),np.uint8))
+```
+(file `thresholds.py`, lines 14-24).
+
+It works better in many different situations - and it is four times faster!
+
+Result of the thresholding is shown below:
+
+<img src="./output_images/im4_2(thr).png" width="600">
+
+
+
+#### 3. Perspective transform.
+
+To calculate perspective transform, I used provided file `straight_lines1.jpg'.
+The image was undistorted using intrinsic camera parameters calculated in the
+fiers step. Then I found line coordinates with the help of detectLanes() function
+developed in [P1](https://github.com/diz-vara/CarND-P1/blob/master/P1.ipynb).
+
+<img src="./output_images/straight0+lines.png" width="600">
+
+Two original lines coordinates were calculated by `detectLanes()`:
+```
+src = np.float32(
+   [[ lines[0][0], lines[0][1]],
+    [ lines[0][2], lines[0][3]], 
+    [ lines[1][0], lines[1][1]],
+    [ lines[1][2], lines[1][3]], 
+```
+which approximately gives:
+
+```
+src = np.float32(
+   [[ 268, 676],
+    [ 580, 460], 
+    [1046, 676], 
+    [697,  460]])
+``` 
+ To calculate transformation that will make these lines vertical 
+ (and full-height), destination points have same x-coordinates,
+ and y-coodrdinates corresponding to the size of the image: 
+```
+dst = np.float32(
+   [[ lines[0][0], height],
+    [ lines[0][0], 0], 
+    [ lines[1][0], height], 
+    [ lines[1][0],  0]])
+ ```
+where height = image.shape[0]
+
+Result of coordinate transformation is shown below: 
+ 
+<img src="./output_images/warped.png" width="600">
+
+(In the actual pipeline, I applied coordinate transformation **after** thresholding - 
+this sequence gives more consistent results.)
+
+#### 4. Lane-line pixels and polynomial fit
+
+At this point, it became possible to apply thresholding, undistortion and perspective
+transformation - and obtain bird-eye view of the curved lines:
+
+I also removed noise (small particles) by simple 'open' operation
+(`cv2.MORPH_OPEN`)
+
+<img src="./output_images/lines_warped.png" width="400">
+
+Initially, lines were identified by a sliding window search (file `window_fit.py`, lines 13-74).
+I replaces explicit points selection from the lesson by OpenCV `findNonZero()`, apllyed to
+the search rectangles.
+ 
+Process of the search is illustrated below:
+
+<img src="./output_images/sliding_search.png" width="400">
+
+In subsequent frames, I just masked binary image with the mask, defined by previous
+polinomial fit:
+
+<img src="./output_images/mask.png" width="400">
+
+(I used separate values for left-line and right-line masks).
+
+When pixels belonging to the left and right lines were identified, I used 
+`np.polyfit()` to compute second-order polynomial. Computed polynomials were
+exponentially smoothed (file `line.py`, lines 42-67).
+
+After computation, the resulted region was plotted on the separate 'overlay' image
+(file `window_fit.py`, lines 137-144), 
+
+<img src="./output_images/im4_4(lane).png" width="400">
+
+
+Inverted percpective transformation matrix was applied to the overlay:
+
+<img src="./output_images/im4_5(lane_unw).png" width="400">
+
+and mask image was formed
+(file `window_fit.py`, lines 147-160)
+
+
+Actual lane curvature was calculated by a given formula and approximate calibration
+values (file `line.py`, lines 68-70), resulted values were averaged, and 
+shift from the center was estimated (file `window_fit.py`, lines 162-167)
+
+<img src="./output_images/im4_6(result).png" width="400">
+
+Then this pipeline was applied to the project video:
+(file `P4.py`, lines 67-81)
+
+
+Here's a [link to my video result](./project_result.mp4) - 
+and here's a [result of the 'challenge_video' processing](./challenge_result.mp4)
+
+---
+
+### Discussion
+
+Considering all things we learned in this module, I still think that it is just a toy,
+student example, first glimpse of the real problem.
+
+* Line extraction methods (my 'simple' and sophisticated thresholds from the lessons) will not work in
+*all* possible light conditions. May be, it is just a question of parameters - but then we should have
+some additional module that will analyse the picture (sequence of pictures) - and adjust parameters.
+* This approach will not work in a common situation of a lane crossing: if the relative motion is fast,
+we'll (probably) loose the track of the lines, and histogram analysis will not help us to separate them,
+because line will cross the centre of the frame.
+
+    <img src="./output_images/crossing.png" width="400">
+    
+    Other line separation methods can help - I've successfully applied 
+    `AgglomerativeClustering` from the `sklearn` package - but anyway we'll 
+    need some priors.
+
+* Line detection can easily be distracted by nearby cars, additional marks and writings on the
+road. Add to it tram lines, buildings, advertisements and pedestrians - and you'll see that lane
+navigation in the city is a really hard problem.
+
+One can tell that it is possible to build deep network that will take an input image (or video in
+the case of RNN) - an return all lanes. But I do not think it is a right answer to the question: not 
+only because of the 'black-box'ness' of the deep networks - but because ANNs learn from a lot of 
+frequent data and can't answer properly to the situation they never saw.
+
+From my point of view, the better way is to create some flexible and complex (but still manageable) model
+of the world (including road configuration, lanes, nearby cars, possible obstacles etc.) - and fit this
+model parameters to the observed data. In a way, we did it in this project - but our model was 
+very simple (consisting of two parallel lines) - and we fit it in a straightforward, non-probabilistic
+way.
+
+Thinking of consiense solutions, I try to keep track on Bayesians - groups of [Zoubin Ghahramani](http://mlg.eng.cam.ac.uk/zoubin/)
+and [Raquel Urtasun](http://www.cs.toronto.edu/~urtasun/). And, as [yesterday news](http://tcrn.ch/2pSyzMN) showed
+that now they'll work together - we know where to look for such models.
+
+ 
+
+ 

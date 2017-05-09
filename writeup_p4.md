@@ -1,9 +1,8 @@
-##Writeup Template
-###You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
 
----
 
-**Advanced Lane Finding Project**
+
+
+# **Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
 
@@ -16,24 +15,6 @@ The goals / steps of this project are the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-[//]: # (Image References)
-
-[distorted]: ./output_images/cal_distorted.png "distorted"
-[undist0]: ./output_images/cal_undistorted_0.png "undistorted"
-
-[calibr4]: ./camera_cal/calibration4.jpg "calibr4m"
-[calibr5]: ./camera_cal/calibration5.jpg "calibr5m"
-
-[undist1]: ./output_images/cal_undistorted_1.png "undistorted"
-[undist2]: ./output_images/cal_undistorted_2.png "undistorted"
-[undist3]: ./output_images/cal_undistorted_3.png "undistorted"
-
-[imagea]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
 
 
 ### Camera Calibration
