@@ -279,13 +279,48 @@ Then this pipeline was applyed to the projet video:
 (file `P4.py`, lines 67-81)
 
 
-Here's a [link to my video result](./project_result.mp4)
+Here's a [link to my video result](./project_result.mp4) - 
+and here's a [result of the 'challenge_video' processing](./challenge_result.mp4)
 
 ---
 
 ### Discussion
 
-#### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+Considering all things we learned in this module, I still think that it is just a toy,
+student example, first glimpse of the real problem.
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+* Line extraction methods (my 'simple' and sofisticated thresholds from the lessons) will not work in
+*all* possible light conditions. May be, it is just a question of parameters - but then we should have
+some additional module that will analyse the picture (sequence of pictures) - and adjust parameters.
+* This approach will not work in a common situation of a lane crossing: if the relative motion is fast,
+we'll (probably) loose the track of the lines, and histogram analysis will not help us to separate them,
+because line will cross the center of the frame.
 
+    <img src="./output_images/crossing.png" width="400">
+    
+    Other line separation methods can help - I've succesfully apllyed 
+    `AgglomerativeClustering` from the `sklearn` package - but anyway we'll 
+    need some priors
+
+* Line detection can easily be distracted by nearby cars, additonal marks and writings on the
+road. Add to it tram lines, buildings, advertisments and pedestrians - and you'll see that lane
+navigation in the city is a really hard problem.
+
+One can tell that it is possible to build deep network that will take an input image (or video in
+the case of RNN) - an return all lanes. But I do not think it is a right answer to the question: not 
+only because of the 'black-box'ness' of the deep networks - but because ANNs learn from a lot of 
+frequent data and can't answer properly to the situation they never saw.
+
+From my point of view, the better way is to create some flexible and complex (but still manageble) model
+of the world (including road configuration, lanes, nearby cars, possible obstacles etc.) - and fit this
+model parameters to the observed data. In a way, we did it in this project - but our model was 
+very simple (consisting of two parallel lines) - and we fit it in a straightforward, non-probabilistic
+way.
+
+Thinking of consiense solutions, I try to keep track on Bayesians - groups of [Zoubin Ghahramani](http://mlg.eng.cam.ac.uk/zoubin/)
+and [Raquel Urtasun](http://www.cs.toronto.edu/~urtasun/). And, as [yesterday news](http://tcrn.ch/2pSyzMN) showed
+that now they'll work together - we know where to look for such models.
+
+ 
+
+ 

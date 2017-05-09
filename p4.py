@@ -69,11 +69,9 @@ plt.imshow(prc)
 from moviepy.editor import VideoFileClip
 #from IPython.display import HTML
      
-left_fit = np.zeros(3)
-right_fit = np.zeros(3)
-leftPts = [] 
-rightPts = []
-
+lineLeft = Line(1)
+lineRight = Line(2)
+mask=None
 video_output = 'out/result.mp4'
 clip2 = VideoFileClip('project_video.mp4')
 first_clip = clip2.fl_image(process_image)
@@ -83,12 +81,9 @@ get_ipython().magic('time first_clip.write_videofile(video_output, audio=False)'
 
 #%%
 from moviepy.editor import VideoFileClip
-#from IPython.display import HTML
-     
-left_fit = np.zeros(3)
-right_fit = np.zeros(3)
-leftPts = [] 
-rightPts = []
+#lineLeft = Line(1)
+#lineRight = Line(2)
+#mask=None
 
 video_output = 'out/old_chal.mp4'
 clip2 = VideoFileClip('challenge_video.mp4')
@@ -98,4 +93,4 @@ get_ipython().magic('time first_clip.write_videofile(video_output, audio=False)'
 
 
 
-        
+#%%
