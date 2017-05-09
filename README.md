@@ -21,7 +21,7 @@ The goals / steps of this project are the following:
 
 
 
-The code for this step is contained in lines # through # of the file called `calibrate.py`).  
+The code for this step is contained in the file called `calibrate.py`.  
 
 I start by preparing "object points", which will be the (x, y, z) coordinates of the chessboard corners in the world. I assumed (according to project instructions) that calibration pattern will be fixed, with 6 rows and 
 9 columns of 'inner crosses'. Next assumptions are:
@@ -113,6 +113,8 @@ the frame - at that one is the 'artistic' LensBaby 2.0.
 
 ### Pipeline (single images)
 
+#### 1. Eliminating distortions.
+
 Examples above show that lens distortion is minimal at the centre of the images,
 where we expect lines to appear. So, I'll not publish 'undistorted lanes' here - 
 you'll see effect of undistortion few lines below.
@@ -163,6 +165,8 @@ Result of the thresholding is shown below:
 
 
 #### 3. Perspective transform.
+
+Code for this step you can find in the file `warp.py`.
 
 To calculate perspective transform, I used provided file `straight_lines1.jpg'.
 The image was undistorted using intrinsic camera parameters calculated in the
